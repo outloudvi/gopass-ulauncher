@@ -35,6 +35,18 @@ NO_FILENAME_ITEM = ExtensionResultItem(icon=WARNING_ICON,
                                        description='Please check your arguments.',
                                        on_enter=DoNothingAction())
 
+def get_files_and_folders(preferences):
+    pass_cmd = preferences['pass-cmd']
+    pass_path = preferences['store-location']
+
+    if 'gopass' in pass_cmd:
+        files_and_folders = check_output(f"{pass_cmd} find ".split(" ")).decode("utf-8")
+    else:
+        cmd = 'find {path}* -type f -name "*.gpg" -exec realpath --relative-to {path} {{}} \;'.format(path=pass_path)
+        files_and_folders = check_output(cmd, shell=True).decode("utf-8")
+        files_and_folders = re.sub(r'(\.gpg)', '', files_and_folders)
+
+    return files_and_folders
 
 class PassExtension(Extension):
     """ Extension class, does the searching """
@@ -47,6 +59,7 @@ class PassExtension(Extension):
         """ Launches a find command with the specified pattern """
 
         pass_cmd = self.preferences['pass-cmd']
+        pass_path = self.preferences['store-location']
 
         if not path:
             path = ''
@@ -64,7 +77,7 @@ class PassExtension(Extension):
         else:
             max_depth = ''
 
-        files_and_folders = check_output(f"{pass_cmd} find ".split(" ")).decode("utf-8")
+        files_and_folders = get_files_and_folders(self.preferences)
 
         files_re = r"^{path}((?:[^/\n]+/){{0,{depth}}}{pattern})$".format(path=path, depth=max_depth, pattern=pattern)
 
@@ -113,7 +126,7 @@ class KeywordQueryEventListener(EventListener):
             if limit < 0:
                 break
 
-            action = RunScriptAction("{1} -c {0}".format(os_path.join(path, _file), pass_cmd), None)
+            action = RunScriptAction("{1} --clip {0}".format(os_path.join(path, _file), pass_cmd), None)
             items.append(ExtensionResultItem(icon=PASSWORD_ICON,
                                              name="{0}".format(_file),
                                              description=PASSWORD_DESCRIPTION,
@@ -155,7 +168,7 @@ class KeywordQueryEventListener(EventListener):
                 path = path[1:]
 
             # store_location = os_path.expanduser(self.extension.preferences['store-location'])
-            files_and_folders = check_output(f"{pass_cmd} find ".split(" ")).decode("utf-8")
+            files_and_folders = get_files_and_folders(self.extension.preferences)
 
             depth = None
 
@@ -185,12 +198,24 @@ class KeywordQueryEventListener(EventListener):
 
                 # If the user specified a pattern and we are in generation mode
                 # give him the possibility to generate the password
-                action = RunScriptAction(
-                    "{} generate --symbols={} --force=true --strict=false -c {} {}".format(pass_cmd,
-                                                                                        self.extension.preferences['special-characters'],
-                                                                                        os_path.join(path, pattern),
-                                                                                        self.extension.preferences['password-length']),
+
+                if 'gopass' in pass_cmd:
+                    action = RunScriptAction(
+                        "{} generate --symbols={} --force=true --strict=false -c {} {}".format(pass_cmd,
+                                                                                            self.extension.preferences['special-characters'],
+                                                                                            os_path.join(path, pattern),
+                                                                                            self.extension.preferences['password-length']),
+                        None)
+                else:
+                    action = RunScriptAction(
+                        "{} generate {} -c {} {}".format(
+                            pass_cmd,
+                            '-n' if self.extension.preferences['special-characters'] is not None else '',
+                            os_path.join(path, pattern),
+                            self.extension.preferences['password-length'],
+                        ),
                     None)
+
 
                 misc.append(ExtensionResultItem(
                     icon=PASSWORD_ICON,
