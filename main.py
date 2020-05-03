@@ -46,36 +46,33 @@ class PassExtension(Extension):
     def search(self, path=None, pattern=None, depth=None):
         """ Launches a find command with the specified pattern """
 
-        store_location = os_path.expanduser(self.preferences['store-location'])
+        pass_cmd = self.preferences['pass-cmd']
 
         if not path:
             path = ''
+        else:
+            if not path.endswith('/'):
+                path += '/'
 
         if not pattern:
-            pattern = ''
+            pattern = r'[^/\n]+'
+        else:
+            pattern = r'[^/\n]*{pattern}[^/\n]*'.format(pattern=pattern)
 
         if depth:
-            max_depth = '-maxdepth {} '.format(str(depth))
+            max_depth = depth-1
         else:
             max_depth = ''
 
-        searching_path = os_path.join(store_location, path)
+        files_and_folders = check_output(f"{pass_cmd} find ".split(" ")).decode("utf-8")
 
-        cmd_files = ("find {} {}-type f -not " +
-                     "-path *.git* -not -name .* -iname *{}*").format(searching_path,
-                                                                      max_depth,
-                                                                      pattern)
+        files_re = r"^{path}((?:[^/\n]+/){{0,{depth}}}{pattern})$".format(path=path, depth=max_depth, pattern=pattern)
 
-        cmd_dirs = ("find {} {}-type d -not " +
-                    "-path *.git* -not -name .* -iname *{}*").format(searching_path,
-                                                                     max_depth,
-                                                                     pattern)
+        files = re.findall(files_re, files_and_folders, flags=re.MULTILINE)
 
-        files = re.findall("{}/*(.+).gpg".format(searching_path),
-                           check_output(cmd_files.split(" ")).decode("utf-8"))
+        re_dirs = "^{path}((?:[^/\n]+/){{0,{depth}}}{pattern}/)".format(path=path, depth=max_depth, pattern=pattern)
 
-        dirs = re.findall("{}/*(.+)".format(searching_path),
-                          check_output(cmd_dirs.split(" ")).decode("utf-8"))
+        dirs = list(set(re.findall(re_dirs, files_and_folders, flags=re.MULTILINE)))
 
         files.sort()
         dirs.sort()
@@ -94,6 +91,8 @@ class KeywordQueryEventListener(EventListener):
         items = []
         limit = int(self.extension.preferences['max-results'])
 
+        pass_cmd = self.extension.preferences['pass-cmd']
+
         if limit < len(dirs) + len(files):
             items.append(MORE_ELEMENTS_ITEM)
 
@@ -102,7 +101,7 @@ class KeywordQueryEventListener(EventListener):
             if limit < 0:
                 break
 
-            action = SetUserQueryAction("{0} {1}/".format(keyword,
+            action = SetUserQueryAction("{0} {1}".format(keyword,
                                                           os_path.join(path, _dir)))
             items.append(ExtensionResultItem(icon=FOLDER_ICON,
                                              name="{0}".format(_dir),
@@ -114,7 +113,7 @@ class KeywordQueryEventListener(EventListener):
             if limit < 0:
                 break
 
-            action = RunScriptAction("pass -c {0}/{1}".format(path, _file), None)
+            action = RunScriptAction("{1} -c {0}".format(os_path.join(path, _file), pass_cmd), None)
             items.append(ExtensionResultItem(icon=PASSWORD_ICON,
                                              name="{0}".format(_file),
                                              description=PASSWORD_DESCRIPTION,
@@ -126,6 +125,8 @@ class KeywordQueryEventListener(EventListener):
         """ On user input """
 
         self.extension = extension
+
+        pass_cmd = self.extension.preferences['pass-cmd']
 
         # Get keyword and arguments from event
         query_keyword = event.get_keyword()
@@ -153,10 +154,12 @@ class KeywordQueryEventListener(EventListener):
             if path.startswith('/'):
                 path = path[1:]
 
-            store_location = os_path.expanduser(self.extension.preferences['store-location'])
+            # store_location = os_path.expanduser(self.extension.preferences['store-location'])
+            files_and_folders = check_output(f"{pass_cmd} find ".split(" ")).decode("utf-8")
+
             depth = None
 
-            if not os_path.exists(os_path.join(store_location, path)):
+            if not re.findall(r"^{path}(.+)$".format(path=path), files_and_folders, flags=re.MULTILINE):
 
                 path_not_exists = True
                 if query_keyword == extension.preferences['pass-search']:
@@ -183,7 +186,10 @@ class KeywordQueryEventListener(EventListener):
                 # If the user specified a pattern and we are in generation mode
                 # give him the possibility to generate the password
                 action = RunScriptAction(
-                    "pass generate -c {}".format(os_path.join(path, pattern)),
+                    "{} generate --symbols={} --force=true --strict=false -c {} {}".format(pass_cmd,
+                                                                                        self.extension.preferences['special-characters'],
+                                                                                        os_path.join(path, pattern),
+                                                                                        self.extension.preferences['password-length']),
                     None)
 
                 misc.append(ExtensionResultItem(

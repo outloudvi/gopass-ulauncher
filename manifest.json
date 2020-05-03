@@ -23,6 +23,13 @@
             "default_value": "pg"
         },
         {
+            "id": "pass-cmd",
+            "type": "input",
+            "name": "Pass command",
+            "description": "The location of the pass executeable",
+            "default_value": "pass"
+        },
+        {
             "id": "store-location",
             "type": "input",
             "name": "Password store location",
@@ -33,6 +40,28 @@
             "type": "input",
             "name": "Maximal number of showed results",
             "default_value": "6"
+        },
+        {
+            "id": "password-length",
+            "type": "input",
+            "name": "Length of generated passwords",
+            "default_value": "24"
+        },
+        {
+            "id": "special-characters",
+            "type": "select",
+            "name": "Include specials characters in generated passwords",
+            "default_value": "false",
+            "options": [
+                {
+                    "value":  "false",
+                    "text": "No"
+                },
+                {
+                    "value":  "true",
+                    "text": "Yes"
+                }
+            ]
         }
     ]
 }
