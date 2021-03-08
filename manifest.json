@@ -1,67 +1,74 @@
 {
-    "required_api_version": "^2.0.0",
-    "name": "Password store",
-    "description": "Extension for the standard unix password manager",
-    "developer_name": "Yannis Huber",
-    "icon": "images/icon.png",
-    "options": {
-        "query_debounce": 0.1
+  "required_api_version": "^2.0.0",
+  "name": "Gopass with OTP",
+  "description": "Extension for gopass with OTP",
+  "developer_name": "Outvi V",
+  "icon": "images/icon.png",
+  "options": {
+    "query_debounce": 0.1
+  },
+  "preferences": [
+    {
+      "id": "pass-search",
+      "type": "keyword",
+      "name": "Pass search",
+      "description": "Search and copy entries of your password store",
+      "default_value": "pass"
     },
-    "preferences": [
+    {
+      "id": "pass-otp-search",
+      "type": "keyword",
+      "name": "Pass OTP search",
+      "description": "Search and copy OTP entries of your password store. Empty to turn off OTP feature",
+      "default_value": "otp"
+    },
+    {
+      "id": "pass-generate",
+      "type": "keyword",
+      "name": "Pass generate",
+      "description": "Generate and store new entries in your password store",
+      "default_value": "passg"
+    },
+    {
+      "id": "gopass-cmd",
+      "type": "input",
+      "name": "Gopass command",
+      "description": "The location of the gopass executeable",
+      "default_value": "gopass"
+    },
+    {
+      "id": "max-results",
+      "type": "input",
+      "name": "Maximal number of showed results",
+      "default_value": "6"
+    },
+    {
+      "id": "password-length",
+      "type": "input",
+      "name": "Length of generated passwords",
+      "default_value": "24"
+    },
+    {
+      "id": "otp-filter",
+      "type": "input",
+      "name": "OTP entries search filter",
+      "default_value": "otp/"
+    },
+    {
+      "id": "special-characters",
+      "type": "select",
+      "name": "Include specials characters in generated passwords",
+      "default_value": "false",
+      "options": [
         {
-            "id": "pass-search",
-            "type": "keyword",
-            "name": "Pass search",
-            "description": "Search and copy entries of your password store",
-            "default_value": "ps"
+          "value": "false",
+          "text": "No"
         },
         {
-            "id": "pass-generate",
-            "type": "keyword",
-            "name": "Pass generate",
-            "description": "Generate and store new entries in your password store",
-            "default_value": "pg"
-        },
-        {
-            "id": "pass-cmd",
-            "type": "input",
-            "name": "Pass command",
-            "description": "The location of the pass executeable",
-            "default_value": "pass"
-        },
-        {
-            "id": "store-location",
-            "type": "input",
-            "name": "Password store location",
-            "default_value": "~/.password-store/"
-        },
-        {
-            "id": "max-results",
-            "type": "input",
-            "name": "Maximal number of showed results",
-            "default_value": "6"
-        },
-        {
-            "id": "password-length",
-            "type": "input",
-            "name": "Length of generated passwords",
-            "default_value": "24"
-        },
-        {
-            "id": "special-characters",
-            "type": "select",
-            "name": "Include specials characters in generated passwords",
-            "default_value": "false",
-            "options": [
-                {
-                    "value":  "false",
-                    "text": "No"
-                },
-                {
-                    "value":  "true",
-                    "text": "Yes"
-                }
-            ]
+          "value": "true",
+          "text": "Yes"
         }
-    ]
+      ]
+    }
+  ]
 }
