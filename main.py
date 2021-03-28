@@ -76,13 +76,13 @@ class PassExtension(Extension):
         files_re = r"^{path}((?:[^/\n]+/){{0,{depth}}}{pattern})$".format(
             path=path, depth=max_depth, pattern=pattern)
 
-        files = re.findall(files_re, files_and_folders, flags=re.MULTILINE)
+        files = re.findall(files_re, files_and_folders, flags=re.MULTILINE | re.IGNORECASE)
 
         re_dirs = "^{path}((?:[^/\n]+/){{0,{depth}}}{pattern}/)".format(
             path=path, depth=max_depth, pattern=pattern)
 
         dirs = list(
-            set(re.findall(re_dirs, files_and_folders, flags=re.MULTILINE)))
+            set(re.findall(re_dirs, files_and_folders, flags=re.MULTILINE | re.IGNORECASE)))
 
         files.sort()
         dirs.sort()
